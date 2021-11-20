@@ -1,5 +1,3 @@
-extern crate bluez;
-
 use bytes::Buf;
 use bytes::Bytes;
 

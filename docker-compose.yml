@@ -1,0 +1,28 @@
+# To run on a raspberry pi 4
+
+version: '2'
+
+services:
+  vector:
+    build: example/vector
+    ports:
+      - 9100:9000
+    restart: unless-stopped
+
+  sensor:
+    build: .
+    command: localhost:9100
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/ttyAMA0
+    environment:
+      - RUST_LOG=debug
+    network_mode: host
+    restart: unless-stopped
+
+networks:
+  backend: {}
+  host_net:
+    external: true
+    name: host

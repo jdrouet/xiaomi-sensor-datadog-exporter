@@ -1,0 +1,11 @@
+[sources.xiaomi-sensor]
+type = "socket"
+address = "0.0.0.0:9000"
+max_length = 102_400
+mode = "tcp"
+
+[sinks.console]
+type = "console"
+inputs = ["xiaomi-sensor"]
+target = "stdout"
+encoding.codec = "json"

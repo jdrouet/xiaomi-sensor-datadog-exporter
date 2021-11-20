@@ -1,5 +1,5 @@
 [package]
-name = "xiaomi-sensor-datadog-export"
+name = "xiaomi-sensor-exporter"
 version = "0.1.0"
 authors = ["Jérémie Drouet <jeremie.drouet@gmail.com>"]
 edition = "2018"
@@ -9,9 +9,9 @@ edition = "2018"
 [dependencies]
 bluez = "^0.3"
 bytes = "^1.0"
+clap = "3.0.0-beta.5"
 env_logger = "0.8"
 log = "0.4"
-reqwest = { version = "0.11.1", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "^1.2", features = ["full"] }
-datadog-client = { version = "^0.2" }
