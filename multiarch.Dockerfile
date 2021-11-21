@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM rust:latest AS base-builder
+FROM --platform=$BUILDPLATFORM rust:bullseye AS base-builder
 
 ENV USER=bob
 
@@ -9,7 +9,7 @@ COPY Cargo.toml /code/Cargo.toml
 RUN mkdir -p /code/.cargo \
   && cargo vendor > /code/.cargo/config
 
-FROM rust:latest AS builder
+FROM rust:bullseye AS builder
 
 RUN apt-get update \
   && apt-get install -y gcc g++
@@ -21,8 +21,8 @@ WORKDIR /code
 
 RUN cargo build --release --offline
 
-FROM debian:buster
+FROM debian:bullseye
 
-COPY --from=builder /code/target/release/xiaomi-sensor-datadog-export /xiaomi-sensor-datadog-export
+COPY --from=builder /code/target/release/xiaomi-sensor-exporter /xiaomi-sensor-exporter
 
-CMD ["/xiaomi-sensor-datadog-export"]
+ENTRYPOINT ["/xiaomi-sensor-exporter"]

@@ -1,27 +1,22 @@
-use datadog_client::client::{Client, Error as DDError};
-use datadog_client::metrics::Serie;
+use crate::model::Entry;
+use std::io::{Error, Write};
+use std::net::TcpStream;
+use tokio::sync::mpsc::Receiver;
 
-pub struct Publisher {
-    client: Client,
-}
+pub struct Publisher(TcpStream);
 
 impl Publisher {
-    pub fn from_env() -> Self {
-        let client = Client::new(
-            std::env::var("DD_HOST").unwrap_or_else(|_| String::from("https://api.datadoghq.eu")),
-            std::env::var("DD_API_KEY").unwrap(),
-        );
-        Self { client }
+    pub fn new(address: &str) -> Self {
+        Self(TcpStream::connect(address).expect("unable to connect tcp server"))
     }
 
-    pub async fn send(&self, series: Vec<Serie>) -> Result<(), String> {
-        self.client
-            .post_metrics(&series)
-            .await
-            .map_err(|err| match err {
-                DDError::Reqwest(req) => format!("error while fetching: {:?}", req),
-                DDError::Body(_, body) => format!("error with the data: {:?}", body),
-            })?;
+    pub async fn run(&mut self, mut receiver: Receiver<Entry>) -> Result<(), Error> {
+        log::debug!("waiting for events...");
+        while let Some(event) = receiver.recv().await {
+            log::debug!("received: {:?}", event);
+            let payload = serde_json::to_string(&event).unwrap();
+            writeln!(self.0, "{}", payload)?;
+        }
         Ok(())
     }
 }

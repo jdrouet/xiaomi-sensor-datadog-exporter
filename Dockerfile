@@ -1,4 +1,4 @@
-FROM rust:latest AS base-builder
+FROM rust:bullseye AS builder
 
 ENV USER=bob
 
@@ -13,8 +13,12 @@ COPY src /code/src
 
 RUN cargo build --release --offline
 
-FROM debian:buster
+FROM scratch AS binary
 
-COPY --from=builder /code/target/release/xiaomi-sensor-datadog-export /xiaomi-sensor-datadog-export
+COPY --from=builder /code/target/release/xiaomi-sensor-exporter /xiaomi-sensor-exporter
 
-CMD ["/xiaomi-sensor-datadog-export"]
+FROM debian:bullseye
+
+COPY --from=builder /code/target/release/xiaomi-sensor-exporter /xiaomi-sensor-exporter
+
+ENTRYPOINT ["/xiaomi-sensor-exporter"]
