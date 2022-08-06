@@ -10,6 +10,6 @@ With this service, you'll be able to listen for the bluetooth messages sent from
 # for current platform
 docker build --tag xiaomi-sensor-exporter .
 # for multi arch building
-docker build -f multiarch.Dockerfile --platform linux/amd64,linux/arm/v8 --tag xiaomi-sensor-datadog-exporter .
+docker build --platform linux/amd64,linux/arm/v8 --tag xiaomi-sensor-datadog-exporter .
 ```
 
