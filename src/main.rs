@@ -9,7 +9,8 @@ use tokio::sync::mpsc;
 
 #[derive(Parser)]
 struct Command {
-    #[clap(long, about = "Size of the buffer", default_value = "10")]
+    // Size of the buffer
+    #[clap(long, default_value = "10")]
     buffer_size: usize,
     address: String,
 }
