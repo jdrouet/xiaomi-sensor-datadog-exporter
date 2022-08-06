@@ -1,7 +1,9 @@
 use crate::model::Entry;
-use bluez::client::*;
-use bluez::interface::controller::*;
-use bluez::interface::event::Event;
+use bluez::management::interface::{Controller, ControllerSetting, Event};
+use bluez::management::{
+    get_controller_info, get_controller_list, set_powered, start_discovery, AddressTypeFlag,
+    ControllerInfo, ManagementStream,
+};
 use bluez::Address;
 use bytes::Bytes;
 use log;
@@ -10,11 +12,11 @@ use std::time::Duration;
 use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
 
-pub struct Listener<'b>(BlueZClient<'b>);
+pub struct Listener(ManagementStream);
 
-impl<'b> Listener<'b> {
+impl Listener {
     pub fn new() -> Self {
-        Self(BlueZClient::new().unwrap())
+        Self(ManagementStream::open().unwrap())
     }
 
     async fn handle_device_found(&mut self, address: Address, data: Bytes, sender: Sender<Entry>) {
@@ -32,9 +34,9 @@ impl<'b> Listener<'b> {
     async fn get_supported_controller(
         &mut self,
     ) -> Result<(Controller, ControllerInfo), Box<dyn Error>> {
-        let controllers = self.0.get_controller_list().await?;
+        let controllers = get_controller_list(&mut self.0, None).await?;
         for ctrl in controllers.into_iter() {
-            let info = self.0.get_controller_info(ctrl).await?;
+            let info = get_controller_info(&mut self.0, ctrl, None).await?;
             if info.supported_settings.contains(ControllerSetting::Powered) {
                 return Ok((ctrl, info));
             }
@@ -47,23 +49,24 @@ impl<'b> Listener<'b> {
 
         if !info.current_settings.contains(ControllerSetting::Powered) {
             log::info!("powering on bluetooth controller {}", controller);
-            self.0.set_powered(controller, true).await?;
+            set_powered(&mut self.0, controller, true, None).await?;
         }
 
         // scan for some devices
         // to do this we'll need to listen for the Device Found event
 
-        self.0
-            .start_discovery(
-                controller,
-                AddressTypeFlag::BREDR | AddressTypeFlag::LEPublic | AddressTypeFlag::LERandom,
-            )
-            .await?;
+        start_discovery(
+            &mut self.0,
+            controller,
+            AddressTypeFlag::BREDR | AddressTypeFlag::LEPublic | AddressTypeFlag::LERandom,
+            None,
+        )
+        .await?;
 
         // just wait for discovery forever
         loop {
             // process() blocks until there is a response to be had
-            let response = self.0.process().await?;
+            let response = self.0.receive().await?;
 
             match response.event {
                 Event::DeviceFound {
@@ -76,14 +79,15 @@ impl<'b> Listener<'b> {
                     log::debug!("discovering: {}", discovering);
                     // if discovery ended, turn it back on
                     if !discovering {
-                        self.0
-                            .start_discovery(
-                                controller,
-                                AddressTypeFlag::BREDR
-                                    | AddressTypeFlag::LEPublic
-                                    | AddressTypeFlag::LERandom,
-                            )
-                            .await?;
+                        start_discovery(
+                            &mut self.0,
+                            controller,
+                            AddressTypeFlag::BREDR
+                                | AddressTypeFlag::LEPublic
+                                | AddressTypeFlag::LERandom,
+                            None,
+                        )
+                        .await?;
                     }
                 }
                 _ => (),

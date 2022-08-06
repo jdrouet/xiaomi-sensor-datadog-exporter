@@ -1,5 +1,8 @@
 FROM rust:bullseye AS builder
 
+RUN apt-get update \
+  && apt-get install -y libclang-11-dev libbluetooth-dev
+
 ENV USER=bob
 
 WORKDIR /code
