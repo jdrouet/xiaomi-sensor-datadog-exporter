@@ -1,7 +1,7 @@
 FROM --platform=$BUILDPLATFORM rust:bookworm AS base-builder
 
 RUN apt-get update \
-  && apt-get install -y libclang-11-dev libbluetooth-dev
+  && apt-get install -y libclang-dev libbluetooth-dev
 
 ENV USER=bob
 
@@ -15,7 +15,7 @@ RUN mkdir -p /code/.cargo \
 FROM rust:bookworm AS builder
 
 RUN apt-get update \
-  && apt-get install -y gcc g++ libclang-11-dev libbluetooth-dev
+  && apt-get install -y gcc g++ libclang-dev libbluetooth-dev
 
 COPY --from=base-builder /code /code
 
