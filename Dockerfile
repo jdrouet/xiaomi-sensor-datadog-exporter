@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM rust:bullseye AS base-builder
+FROM --platform=$BUILDPLATFORM rust:bookworm AS base-builder
 
 RUN apt-get update \
   && apt-get install -y libclang-11-dev libbluetooth-dev
@@ -12,7 +12,7 @@ COPY Cargo.toml /code/Cargo.toml
 RUN mkdir -p /code/.cargo \
   && cargo vendor > /code/.cargo/config
 
-FROM rust:bullseye AS builder
+FROM rust:bookworm AS builder
 
 RUN apt-get update \
   && apt-get install -y gcc g++ libclang-11-dev libbluetooth-dev
@@ -24,7 +24,7 @@ WORKDIR /code
 
 RUN cargo build --release --offline
 
-FROM debian:bullseye
+FROM debian:bookworm
 
 COPY --from=builder /code/target/release/xiaomi-sensor-exporter /xiaomi-sensor-exporter
 
