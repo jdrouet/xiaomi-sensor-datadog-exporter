@@ -7,9 +7,10 @@ use clap::Parser;
 use std::error::Error;
 use tokio::sync::mpsc;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
 struct Command {
-    // Size of the buffer
+    /// Size of the buffer
     #[clap(long, default_value = "10")]
     buffer_size: usize,
     address: String,
