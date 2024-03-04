@@ -18,13 +18,13 @@ jobs:
           - release_for: linux-x86_64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            filename: mrml-cli_linux-x86_64
+            filename: xiaomi-sensor-exporter_linux-x86_64
             command: build
 
           - release_for: linux-arm64
             os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            filename: mrml-cli_linux-arm64
+            filename: xiaomi-sensor-exporter_linux-arm64
             command: build
 
     steps:
@@ -39,10 +39,10 @@ jobs:
         with:
           command: ${{ matrix.platform.command }}
           target: ${{ matrix.platform.target }}
-          args: "--locked --release --package mrml-cli"
+          args: "--locked --release"
           strip: true
       - name: move binary file
-        run: mv target/${{ matrix.platform.target }}/release/mrml target/${{ matrix.platform.filename }}
+        run: mv target/${{ matrix.platform.target }}/release/xiaomi-sensor-exporter target/${{ matrix.platform.filename }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform.release_for }}
@@ -73,5 +73,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ steps.release_id.outputs.release_id }}
-          args: "mrml-cli_*"
-
+          args: "xiaomi-sensor-exporter_*"
