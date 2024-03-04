@@ -28,6 +28,10 @@ jobs:
             command: build
 
     steps:
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ libclang-dev libbluetooth-dev
       - name: checkout
         uses: actions/checkout@v3
       - name: build binary
