@@ -13,6 +13,10 @@ jobs:
   release-plz:
     runs-on: ubuntu-latest
     steps:
+      - name: install required packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ libclang-11-dev libbluetooth-dev
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
