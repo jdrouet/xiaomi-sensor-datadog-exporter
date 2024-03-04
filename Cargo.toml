@@ -1,7 +1,9 @@
 [package]
 name = "xiaomi-sensor-exporter"
+description = "Server that listenes for xiaomi temperature sensors"
 version = "1.0.0"
 authors = ["Jérémie Drouet <jeremie.drouet@gmail.com>"]
+license = "MIT"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
