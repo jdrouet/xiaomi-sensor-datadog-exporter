@@ -6,7 +6,7 @@ use bluez::management::{
 };
 use bluez::Address;
 use bytes::Bytes;
-use log;
+
 use std::error::Error;
 use std::time::Duration;
 use tokio::sync::mpsc::Sender;
