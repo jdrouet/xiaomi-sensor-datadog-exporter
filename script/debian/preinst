@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+# Add xiaomi-sensor-exporter:xiaomi-sensor-exporter user & group
+id --user xiaomi-sensor-exporter >/dev/null 2>&1 || \
+  useradd --system \
+    --shell /sbin/nologin \
+    --home-dir /var/lib/xiaomi-sensor-exporter \
+    --user-group \
+    --comment "xiaomi-sensor-exporter temperature bluetooth monitor" \
+    xiaomi-sensor-exporter
+
+#DEBHELPER#

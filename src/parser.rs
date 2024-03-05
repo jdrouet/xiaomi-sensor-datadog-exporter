@@ -4,7 +4,7 @@ use bytes::Bytes;
 const PREAMBLE: &[u8; 2] = b"\x1a\x18";
 
 pub fn is_sensor(data: &Bytes) -> bool {
-    data.slice(2..4) == Bytes::from_static(PREAMBLE)
+    data.len() >= 13 && data.slice(2..4) == Bytes::from_static(PREAMBLE)
 }
 
 pub fn read_name(data: &Bytes) -> Option<String> {

@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+# Add xiaomi-sensor-exporter to bluetooth group
+usermod --append --groups bluetooth xiaomi-sensor-exporter || true
+
+#DEBHELPER#

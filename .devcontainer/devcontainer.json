@@ -2,5 +2,6 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "postCreateCommand": "bash .devcontainer/postcreate.sh",
     "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
 }

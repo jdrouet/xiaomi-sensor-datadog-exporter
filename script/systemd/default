@@ -1,0 +1,3 @@
+# /etc/default/xiaomi-sensor-exporter
+# This file can theoretically contain a bunch of environment variables.
+LOG=info

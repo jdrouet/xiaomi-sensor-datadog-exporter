@@ -1,15 +1,14 @@
 use crate::model::Entry;
 use bluez::management::interface::{Controller, ControllerSetting, Event};
 use bluez::management::{
-    get_controller_info, get_controller_list, set_powered, start_discovery, AddressTypeFlag,
-    ControllerInfo, ManagementStream,
+    get_controller_info, get_controller_list, set_powered, set_scan_parameters, start_discovery,
+    AddressTypeFlag, ControllerInfo, ManagementStream,
 };
 use bluez::Address;
 use bytes::Bytes;
 
 use std::error::Error;
 use std::time::Duration;
-use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
 
 pub struct Listener(ManagementStream);
@@ -19,15 +18,11 @@ impl Listener {
         Self(ManagementStream::open().unwrap())
     }
 
-    async fn handle_device_found(&mut self, address: Address, data: Bytes, sender: Sender<Entry>) {
+    async fn handle_device_found(&mut self, address: Address, data: Bytes) {
         if let Some(entry) = Entry::build(address, data) {
-            log::info!("received {:?}", entry);
-            match sender.send(entry).await {
-                Ok(_) => log::info!("entry sent"),
-                Err(err) => log::error!("error sending: {:?}", err),
-            };
+            entry.trace();
         } else {
-            log::debug!("{} is not a sensor...", address);
+            tracing::debug!("{} is not a sensor...", address);
         }
     }
 
@@ -44,11 +39,11 @@ impl Listener {
         panic!("no usable controllers found");
     }
 
-    pub async fn run(&mut self, sender: Sender<Entry>) -> Result<(), Box<dyn Error>> {
+    pub async fn run(&mut self) -> Result<(), Box<dyn Error>> {
         let (controller, info) = self.get_supported_controller().await?;
 
         if !info.current_settings.contains(ControllerSetting::Powered) {
-            log::info!("powering on bluetooth controller {}", controller);
+            tracing::info!("powering on bluetooth controller {}", controller);
             set_powered(&mut self.0, controller, true, None).await?;
         }
 
@@ -72,11 +67,10 @@ impl Listener {
                 Event::DeviceFound {
                     address, eir_data, ..
                 } => {
-                    self.handle_device_found(address, eir_data, sender.clone())
-                        .await;
+                    self.handle_device_found(address, eir_data).await;
                 }
                 Event::Discovering { discovering, .. } => {
-                    log::debug!("discovering: {}", discovering);
+                    tracing::debug!("discovering: {}", discovering);
                     // if discovery ended, turn it back on
                     if !discovering {
                         start_discovery(

@@ -11,9 +11,43 @@ edition = "2018"
 [dependencies]
 bluez = { version = "0.4" }
 bytes = { version = "1.2" }
-clap = { version = "4.4", features = ["derive"] }
-env_logger = { version = "0.10" }
-log = { version = "0.4" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = [
+    "macros",
+    "rt-multi-thread",
+    "sync",
+    "time",
+] }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[package.metadata.deb]
+maintainer = "Jérémie Drouet <jeremie.drouet@gmail.com>"
+copyright = "2024, Jérémie Drouet <jeremie.drouet@gmail.com>"
+license-file = ["LICENSE.txt", "4"]
+extended-description = "An application that will listens for Xiaomi sensor."
+depends = "$auto"
+section = "utility"
+priority = "optional"
+maintainer-scripts = "script/debian/"
+assets = [
+    [
+        "target/release/xiaomi-sensor-exporter",
+        "/usr/bin/xiaomi-sensor-exporter",
+        "755",
+    ],
+    [
+        "readme.md",
+        "/usr/share/doc/xiaomi-sensor-exporter/README.md",
+        "644",
+    ],
+    [
+        "script/systemd/default",
+        "/etc/default/xiaomi-sensor-exporter",
+        "600",
+    ],
+    [
+        "script/systemd/service",
+        "/lib/systemd/system/xiaomi-sensor-exporter.service",
+        "644",
+    ],
+]

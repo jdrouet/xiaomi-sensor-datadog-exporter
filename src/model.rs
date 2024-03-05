@@ -1,18 +1,9 @@
 use crate::parser;
 use bluez::Address;
 use bytes::Bytes;
-use std::time::{SystemTime, UNIX_EPOCH};
 
-fn now() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-}
-
-#[derive(Clone, Debug, serde::Serialize)]
-pub struct Entry {
-    time: u64,
+#[derive(Clone, Debug)]
+pub(crate) struct Entry {
     address: String,
     name: Option<String>,
     temperature: f32,
@@ -24,7 +15,6 @@ impl Entry {
     pub fn build(address: Address, data: Bytes) -> Option<Self> {
         if parser::is_sensor(&data) {
             Some(Self {
-                time: now(),
                 address: address.to_string(),
                 name: parser::read_name(&data),
                 temperature: parser::read_temperature(&data),
@@ -34,5 +24,17 @@ impl Entry {
         } else {
             None
         }
+    }
+
+    pub fn trace(&self) {
+        let name = self.name.as_deref().unwrap_or("");
+        tracing::info!(
+            "received address={:?} name={:?} temperature={} humidity={} battery={}",
+            self.address,
+            name,
+            self.temperature,
+            self.humidity,
+            self.battery
+        )
     }
 }

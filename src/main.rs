@@ -1,39 +1,26 @@
 mod listener;
 mod model;
 mod parser;
-mod publisher;
 
-use clap::Parser;
 use std::error::Error;
-use tokio::sync::mpsc;
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Command {
-    /// Size of the buffer
-    #[clap(long, default_value = "10")]
-    buffer_size: usize,
-    address: String,
+fn init_logs(directive: &str) {
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(directive))
+        .with(tracing_subscriber::fmt::layer().with_ansi(false))
+        .init();
 }
 
 #[tokio::main]
-pub async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+async fn main() -> Result<(), Box<dyn Error>> {
+    if let Ok(level) = std::env::var("LOG") {
+        init_logs(&level);
+    } else {
+        init_logs("debug");
+    }
 
-    let cmd = Command::parse();
-
-    let (sender, receiver) = mpsc::channel(cmd.buffer_size);
-
-    tokio::spawn(async {
-        listener::Listener::new()
-            .run(sender)
-            .await
-            .map_err(|err| err.to_string())
-    });
-
-    publisher::Publisher::new(&cmd.address)
-        .run(receiver)
-        .await?;
-
-    Ok(())
+    listener::Listener::new().run().await
 }
