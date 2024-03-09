@@ -2,8 +2,6 @@ mod listener;
 mod model;
 mod parser;
 
-use std::error::Error;
-
 fn init_logs(directive: &str) {
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
@@ -15,12 +13,12 @@ fn init_logs(directive: &str) {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> bluer::Result<()> {
     if let Ok(level) = std::env::var("LOG") {
         init_logs(&level);
     } else {
         init_logs("debug");
     }
 
-    listener::Listener::new().run().await
+    listener::Listener::new().await?.run().await
 }

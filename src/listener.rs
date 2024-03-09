@@ -1,93 +1,96 @@
-use crate::model::Entry;
-use bluez::management::interface::{Controller, ControllerSetting, Event};
-use bluez::management::{
-    get_controller_info, get_controller_list, set_powered, set_scan_parameters, start_discovery,
-    AddressTypeFlag, ControllerInfo, ManagementStream,
+use bluer::{
+    AdapterEvent, Address, Device, DeviceEvent, DeviceProperty, DiscoveryFilter, DiscoveryTransport,
 };
-use bluez::Address;
-use bytes::Bytes;
+use futures::{pin_mut, stream::SelectAll, StreamExt};
 
-use std::error::Error;
-use std::time::Duration;
-use tokio::time::sleep;
+const SERVICE_ID: u128 = 488837762788578050050668711589115;
 
-pub struct Listener(ManagementStream);
+pub struct Listener {
+    #[allow(dead_code)]
+    session: bluer::Session,
+    adapter: bluer::Adapter,
+    service_id: bluer::Uuid,
+}
 
 impl Listener {
-    pub fn new() -> Self {
-        Self(ManagementStream::open().unwrap())
+    pub async fn new() -> bluer::Result<Self> {
+        let session = bluer::Session::new().await?;
+        let adapter = session.default_adapter().await?;
+        let service_id = bluer::Uuid::from_u128(SERVICE_ID);
+
+        Ok(Listener {
+            session,
+            adapter,
+            service_id,
+        })
     }
 
-    async fn handle_device_found(&mut self, address: Address, data: Bytes) {
-        if let Some(entry) = Entry::build(address, data) {
-            entry.trace();
-        } else {
-            tracing::debug!("{} is not a sensor...", address);
-        }
-    }
+    async fn handle_device(&self, address: Address, device: &Device) -> bluer::Result<()> {
+        if let Some(mut service_data) = device.service_data().await? {
+            if let Some(value) = service_data.remove(&self.service_id) {
+                let name = device.name().await?.unwrap_or_default();
 
-    async fn get_supported_controller(
-        &mut self,
-    ) -> Result<(Controller, ControllerInfo), Box<dyn Error>> {
-        let controllers = get_controller_list(&mut self.0, None).await?;
-        for ctrl in controllers.into_iter() {
-            let info = get_controller_info(&mut self.0, ctrl, None).await?;
-            if info.supported_settings.contains(ControllerSetting::Powered) {
-                return Ok((ctrl, info));
+                if let Some(entry) = crate::model::Entry::build(address, name, &value) {
+                    entry.trace();
+                }
             }
         }
-        panic!("no usable controllers found");
+
+        Ok(())
     }
 
-    pub async fn run(&mut self) -> Result<(), Box<dyn Error>> {
-        let (controller, info) = self.get_supported_controller().await?;
+    async fn handle_change(&self, address: Address, property: DeviceProperty) -> bluer::Result<()> {
+        if let DeviceProperty::ServiceData(mut service_data) = property {
+            if let Some(value) = service_data.remove(&self.service_id) {
+                let device = self.adapter.device(address)?;
+                let name = device.name().await?.unwrap_or_default();
 
-        if !info.current_settings.contains(ControllerSetting::Powered) {
-            tracing::info!("powering on bluetooth controller {}", controller);
-            set_powered(&mut self.0, controller, true, None).await?;
+                if let Some(entry) = crate::model::Entry::build(address, name, &value) {
+                    entry.trace();
+                }
+            }
         }
 
-        // scan for some devices
-        // to do this we'll need to listen for the Device Found event
+        Ok(())
+    }
 
-        start_discovery(
-            &mut self.0,
-            controller,
-            AddressTypeFlag::BREDR | AddressTypeFlag::LEPublic | AddressTypeFlag::LERandom,
-            None,
-        )
-        .await?;
+    pub async fn run(&mut self) -> bluer::Result<()> {
+        self.adapter.set_powered(true).await?;
+        self.adapter
+            .set_discovery_filter(DiscoveryFilter {
+                transport: DiscoveryTransport::Le,
+                ..Default::default()
+            })
+            .await?;
 
-        // just wait for discovery forever
+        let device_events = self.adapter.discover_devices().await?;
+        pin_mut!(device_events);
+
+        let mut all_change_events = SelectAll::new();
+
         loop {
-            // process() blocks until there is a response to be had
-            let response = self.0.receive().await?;
+            tokio::select! {
+                Some(device_event) = device_events.next() => {
+                    if let AdapterEvent::DeviceAdded(addr) = device_event {
+                        let device = self.adapter.device(addr)?;
 
-            match response.event {
-                Event::DeviceFound {
-                    address, eir_data, ..
-                } => {
-                    self.handle_device_found(address, eir_data).await;
-                }
-                Event::Discovering { discovering, .. } => {
-                    tracing::debug!("discovering: {}", discovering);
-                    // if discovery ended, turn it back on
-                    if !discovering {
-                        start_discovery(
-                            &mut self.0,
-                            controller,
-                            AddressTypeFlag::BREDR
-                                | AddressTypeFlag::LEPublic
-                                | AddressTypeFlag::LERandom,
-                            None,
-                        )
-                        .await?;
+                        if let Err(error) = self.handle_device(addr, &device).await {
+                            tracing::warn!("unable to read device {addr:?}: {error:?}");
+                        } else {
+                            let change_events = device.events().await?.map(move |evt| (addr, evt));
+                            all_change_events.push(change_events);
+                        }
                     }
                 }
-                _ => (),
+                Some((addr, DeviceEvent::PropertyChanged(change))) = all_change_events.next() => {
+                    if let Err(error) = self.handle_change(addr, change).await {
+                        tracing::warn!("unable to handle change {addr:?}: {error:?}");
+                    }
+                }
+                else => break
             }
-
-            sleep(Duration::from_millis(50)).await;
         }
+
+        Ok(())
     }
 }
