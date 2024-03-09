@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1](https://github.com/jdrouet/xiaomi-sensor-exporter/compare/v1.1.0...v1.1.1) - 2024-03-09
+
+### Fixed
+- remove unused import
+
+### Other
+- add missing dependencies
+- migrate from bluez to bluer
+- use tracing to output results
+- create devcontainer tooling
+- update binary build
+
 ## [1.1.0](https://github.com/jdrouet/xiaomi-sensor-exporter/compare/v1.0.0...v1.1.0) - 2024-03-04
 
 ### Added
