@@ -14,7 +14,7 @@ jobs:
       - name: install required packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc g++ libclang-11-dev libbluetooth-dev
+          sudo apt-get install -y gcc g++ libbluetooth-dev libclang-11-dev libdbus-1-dev pkg-config
 
       - uses: actions/checkout@v3
 
