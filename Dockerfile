@@ -1,7 +1,7 @@
-FROM --platform=$BUILDPLATFORM rust:bookworm AS base-builder
+FROM --platform=$BUILDPLATFORM rust:bookworm AS vendor
 
 RUN apt-get update \
-  && apt-get install -y libclang-dev libbluetooth-dev
+    && apt-get install -y libclang-dev libbluetooth-dev
 
 ENV USER=bob
 
@@ -10,14 +10,14 @@ RUN cargo init --lib
 COPY Cargo.toml /code/Cargo.toml
 
 RUN mkdir -p /code/.cargo \
-  && cargo vendor > /code/.cargo/config
+    && cargo vendor > /code/.cargo/config
 
 FROM rust:bookworm AS builder
 
 RUN apt-get update \
-  && apt-get install -y gcc g++ libclang-dev libbluetooth-dev
+    && apt-get install -y gcc g++ libclang-dev libbluetooth-dev libdbus-1-dev pkg-config
 
-COPY --from=base-builder /code /code
+COPY --from=vendor /code /code
 
 COPY src /code/src
 WORKDIR /code
