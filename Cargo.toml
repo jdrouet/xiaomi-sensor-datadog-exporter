@@ -12,6 +12,8 @@ edition = "2018"
 bluer = { version = "0.17", features = ["bluetoothd"] }
 futures = { version = "0.3" }
 metrics = { version = "0.23" }
+metrics-exporter-prometheus = { version = "0.15.3", default-features = false, features = ["uds-listener"] }
+metrics-util = { version = "0.17.0", default-features = false }
 tokio = { version = "1", features = [
     "macros",
     "rt-multi-thread",

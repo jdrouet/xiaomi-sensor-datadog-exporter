@@ -1,3 +1,10 @@
+use std::borrow::Cow;
+use std::time::Duration;
+
+use metrics::{describe_gauge, Unit};
+use metrics_exporter_prometheus::PrometheusBuilder;
+use metrics_util::MetricKindMask;
+
 const BATTERY: &str = "battery";
 const HUMIDITY: &str = "humidity";
 const TEMPERATURE: &str = "temperature";
@@ -5,17 +12,22 @@ const TEMPERATURE: &str = "temperature";
 const ADDRESS: &str = "address";
 const NAME: &str = "name";
 
+pub(crate) fn install() {
+    let listener = std::env::var("LISTENER")
+        .ok()
+        .map(Cow::Owned)
+        .unwrap_or(Cow::Borrowed("./metrics.sock"));
+    let builder = PrometheusBuilder::new().with_http_uds_listener(listener.as_ref());
+    builder
+        .idle_timeout(MetricKindMask::GAUGE, Some(Duration::from_secs(60)))
+        .install()
+        .expect("failed to install Prometheus recorder");
+}
+
 pub(crate) fn register() {
-    ::metrics::describe_gauge!(
-        BATTERY,
-        ::metrics::Unit::Percent,
-        "amount of battery left in the sensor"
-    );
-    ::metrics::describe_gauge!(
-        HUMIDITY,
-        ::metrics::Unit::Percent,
-        "amount of humidity in the room"
-    );
+    describe_gauge!(BATTERY, Unit::Percent, "battery left in the sensor");
+    describe_gauge!(HUMIDITY, Unit::Percent, "humidity in the room");
+    describe_gauge!(TEMPERATURE, "temperature in the room");
 }
 
 #[inline(always)]
