@@ -42,6 +42,7 @@ impl Scanner {
         if let Some(mut service_data) = device.service_data().await? {
             if let Some(data) = service_data.remove(&self.service_id) {
                 let name = device.name().await?.unwrap_or_default();
+                tracing::debug!("discovered new device {name} ({address})");
 
                 self.emit_metrics(name, address, data);
             }
@@ -64,6 +65,7 @@ impl Scanner {
     }
 
     pub(crate) async fn run(&mut self) -> bluer::Result<()> {
+        tracing::debug!("enabling adapter");
         self.adapter.set_powered(true).await?;
         self.adapter
             .set_discovery_filter(DiscoveryFilter {
@@ -72,11 +74,11 @@ impl Scanner {
             })
             .await?;
 
+        tracing::info!("listening for devices");
         let device_events = self.adapter.discover_devices().await?;
         pin_mut!(device_events);
 
         let mut all_change_events = SelectAll::new();
-
         loop {
             tokio::select! {
                 Some(device_event) = device_events.next() => {
