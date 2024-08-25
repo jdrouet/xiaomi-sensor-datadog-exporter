@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0](https://github.com/jdrouet/xiaomi-sensor-exporter/compare/v1.1.1...v1.2.0) - 2024-08-25
+
+### Added
+- add more logs
+- use metrics exporter
+- use metrics to store sensor values
+
+### Other
+- add missing dependency
+
 ## [1.1.1](https://github.com/jdrouet/xiaomi-sensor-exporter/compare/v1.1.0...v1.1.1) - 2024-03-09
 
 ### Fixed
