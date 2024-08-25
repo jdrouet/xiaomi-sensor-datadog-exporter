@@ -2,15 +2,15 @@ const TEMPERATURE_INDEX: usize = 6;
 const HUMIDITY_INDEX: usize = 8;
 const BATTERY_INDEX: usize = 9;
 
-pub fn read_temperature(data: &[u8]) -> Option<f32> {
+pub(crate) fn read_temperature(data: &[u8]) -> Option<f32> {
     read_f32(data, TEMPERATURE_INDEX)
 }
 
-pub fn read_humidity(data: &[u8]) -> Option<u8> {
+pub(crate) fn read_humidity(data: &[u8]) -> Option<u8> {
     read_u8(data, HUMIDITY_INDEX)
 }
 
-pub fn read_battery(data: &[u8]) -> Option<u8> {
+pub(crate) fn read_battery(data: &[u8]) -> Option<u8> {
     read_u8(data, BATTERY_INDEX)
 }
 

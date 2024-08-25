@@ -1,6 +1,6 @@
-mod listener;
-mod model;
+mod metrics;
 mod parser;
+mod scanner;
 
 fn init_logs(directive: &str) {
     use tracing_subscriber::layer::SubscriberExt;
@@ -20,5 +20,6 @@ async fn main() -> bluer::Result<()> {
         init_logs("debug");
     }
 
-    listener::Listener::new().await?.run().await
+    crate::metrics::register();
+    scanner::Scanner::new().await?.run().await
 }
